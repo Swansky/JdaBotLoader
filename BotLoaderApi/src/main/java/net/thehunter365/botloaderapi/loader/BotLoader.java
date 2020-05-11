@@ -76,17 +76,13 @@ public class BotLoader implements BotManager {
 
     public void loadBot(BotDescription description) {
         try {
-            URLClassLoader loader = new BotClassLoader(new URL[] {description.getFile().toURI().toURL()});
-
-            Class<?> main = ((BotClassLoader) loader).loadClass(description.getMainClass());
-            Bot botClass = (Bot) main.getDeclaredConstructor().newInstance();
-
-            botClass.init(this.botLoaderApi, description, new File(botsFolder, description.getName()+"/"));
-
-            botLoaderApi.getExecutor().submit(botClass::onEnable);
+            BotClassLoader loader = new BotClassLoader(description.getMainClass(),this.getClass().getClassLoader(),description.getFile());
+            Bot bot  = loader.getBot();
+            bot.init(this.botLoaderApi, description, new File(botsFolder, description.getName()+"/"));
+            bot.onEnable();
             logger.info("Successfully started bot " + description.getName());
 
-            bots.put(description.getName(), botClass);
+            bots.put(description.getName(), bot);
         } catch (Throwable e) {
             e.printStackTrace();
         }

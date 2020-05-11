@@ -1,41 +1,21 @@
 package net.thehunter365.botloaderapi.loader;
 
+import net.thehunter365.botloaderapi.api.Bot;
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
-public class BotClassLoader extends URLClassLoader {
+final class BotClassLoader extends URLClassLoader{
 
-    private static Set<BotClassLoader> loaders = new CopyOnWriteArraySet<>();
+    private Bot bot;
 
-    static {
-        ClassLoader.registerAsParallelCapable();
+    protected BotClassLoader(String main, ClassLoader parent, File file) throws Exception{
+        super(new URL[]{file.toURI().toURL()}, parent);
+        Class<?> clazz = Class.forName(main, true, this);
+        bot = clazz.asSubclass(Bot.class).getDeclaredConstructor().newInstance();
     }
 
-    public BotClassLoader(URL[] urls) {
-        super(urls);
-    }
-
-    @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        return loadClass(name, resolve, true);
-    }
-
-    private Class<?> loadClass(String name, boolean resolve, boolean checkOther) throws ClassNotFoundException {
-        try {
-            return super.loadClass(name, resolve);
-        } catch (ClassNotFoundException ignored) {}
-
-        if (checkOther) {
-            for (BotClassLoader loader : loaders) {
-                if (loader != this) {
-                    try {
-                        return loader.loadClass(name, resolve, false);
-                    } catch (ClassNotFoundException ignored) {}
-                }
-            }
-        }
-        throw new ClassNotFoundException(name);
+    public Bot getBot() {
+        return bot;
     }
 }
